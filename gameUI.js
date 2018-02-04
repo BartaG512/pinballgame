@@ -19,22 +19,22 @@
 //
 // let canvas = document.querySelector('canvas');
 let wall = {
-  offset: -15,
-  gauge: 30,
+  offset: -25,
+  gauge: 50,
 };
 
 let setupSettings = {
   ballsize: 10,
-  ballAmount: 10,
+  ballAmount: 1,
   ballVelocity: {
-    x: 4,
-    y: 5,
+    x: 0,
+    y: -1,
   },
-  shipWidth: 150,
+  shipWidth: 400,
   shipHeight: 20,
 };
 let sizeX = 10;
-let sizeY = 10;
+let sizeY = 6;
 let exist = 0;
 
 let brickPattern = new Array(sizeX).fill().map(() => new Array(sizeY).fill(0)); // empty map
@@ -49,8 +49,9 @@ for (let i = 0; i < brickPattern.length; i++) {
       brickPattern[i][j].exist = 1;
     } else {
     //  console.log("nem");
-      brickPattern[i][j].health = 0;
-      brickPattern[i][j].exist = 0;
+      brickPattern[i][j] = {};
+      brickPattern[i][j].health = 1;
+      brickPattern[i][j].exist = 1;
     }
   }
 }
