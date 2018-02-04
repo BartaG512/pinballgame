@@ -3,8 +3,11 @@ function PinballGame({ mapWidth, mapHeight }) {
   let worldWidth = this.worldWidth;
   this.worldHeight = mapHeight;
   let worldHeight = this.worldHeight;
-  let offset = -10;
+  let offset = 5;
+  let gauge = 30;
+  let ballsize = 40;
   const Engine = Matter.Engine;
+  const Events = Matter.Events;
   const Render = Matter.Render;
   const World = Matter.World;
   const Mouse = Matter.Mouse;
@@ -30,10 +33,11 @@ function PinballGame({ mapWidth, mapHeight }) {
 
 
     this.ship = {
-      size: {w: 100, h: 20},
+      size: {w: 100, h: 50},
       pos: {x: mapWidth/2, y: mapHeight-20},
       color: "#ff0000"
     };
+
 
   World.add(engine.world, [
 
@@ -41,26 +45,27 @@ function PinballGame({ mapWidth, mapHeight }) {
      this.Bodies.rectangle(worldWidth / 2, worldHeight - 30, this.ship.size.w, this.ship.size.h, {
        isStatic: true,
        label: "Bottom-Border",
+       chamfer: { radius: [40, 40, 0, 0] },
        render: {
          fillStyle: this.ship.color,
        }
      }),
      // CREATE BORDERS
-     this.Bodies.rectangle(worldWidth / 2, offset, worldWidth, 10, {
+     this.Bodies.rectangle(worldWidth / 2, offset, worldWidth, gauge, {
        isStatic: true,
        label: "TOP-Border",
        render: {
          fillStyle: "#FFFFFF"
        }
      }),
-     this.Bodies.rectangle(offset, worldHeight / 2, -offset, worldHeight, {
+     this.Bodies.rectangle(offset, worldHeight / 2, gauge, worldHeight,  {
        isStatic: true,
        label: "LEFT-Border",
        render: {
          fillStyle: "#FFFFFF"
        }
      }),
-     this.Bodies.rectangle(worldWidth - offset, worldHeight / 2, offset, worldHeight, {
+     this.Bodies.rectangle(worldWidth - offset, worldHeight / 2, gauge, worldHeight, {
        isStatic: true,
        label: "RIGHT-Border",
        render: {
@@ -72,7 +77,7 @@ function PinballGame({ mapWidth, mapHeight }) {
   //CREATE BALLS
   this.balls = [];
   for (var i = 1; i <= 2; i++) {
-    World.add(engine.world, this.addNewBall(worldWidth/2, worldHeight/2, i+1, i+1, "white", 5, 1));
+    World.add(engine.world, this.addNewBall(worldWidth/2, worldHeight/2, i+1, i+1, "white", ballsize, 1));
   }
   console.log("engine.world",engine.world);
 
@@ -84,7 +89,6 @@ function PinballGame({ mapWidth, mapHeight }) {
     x: 0,
     y: 0
   };
-
 
   let mouse = Mouse.create(render.canvas);
   let mouseConstraint = MouseConstraint.create(engine, {
@@ -109,17 +113,36 @@ function PinballGame({ mapWidth, mapHeight }) {
     canvas: canvas,
     updateMouseCoordinates: (mousePos) => { this.updateMouseCoordinates(mousePos); }
   });
+  const debug = document.getElementById("debug");
 
+  Events.on(engine, 'beforeUpdate', function(event) {
+      var engine = event.source;
+      let shipPos = "Ütő x: " + game.engine.world.bodies[0].position.x + "y: " + game.engine.world.bodies[0].position.y;
+      let ball = {};
+      let x = game.engine.world.bodies[5].position.x;
+      let y = game.engine.world.bodies[5].position.y;
+      let velocity = Matter.Vector.magnitude(game.engine.world.bodies[5].velocity);
+      let debugString = "Ütő x: " + x + "y: " + y +"<br>speed abs :"+ velocity;
+      debug.innerHTML = debugString;
+      // apply random forces every 5 secs
+  });
   // run the engine
   Engine.run(engine);
   // run the renderer
   Render.run(render);
+
+
 };
+
+
+
+
 
 PinballGame.prototype.addNewBall = function(x, y, vx, vy, color, size, damage ) {
   let ball = this.Bodies.circle(x, y, size, {
-    density: 1.01,
+    density: 0.0012,
     frictionAir : 0.0,
+    frictionStatic: 0,
     friction: 0,
     inertia : Infinity,
     restitution: 1,

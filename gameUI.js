@@ -19,6 +19,6 @@
 //
 // let canvas = document.querySelector('canvas');
 var game = new PinballGame( {
-  mapHeight: 800,
-  mapWidth: 200
+  mapHeight: 600,
+  mapWidth: 400
 } );
