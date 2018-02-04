@@ -1,11 +1,19 @@
-function PinballGame({ mapWidth, mapHeight }) {
+function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) {
   this.worldWidth = mapWidth;
   let worldWidth = this.worldWidth;
   this.worldHeight = mapHeight;
   let worldHeight = this.worldHeight;
-  let offset = 5;
-  let gauge = 30;
-  let ballsize = 40;
+  let ballsize = setupSettings.ballsize;
+  let ballAmount = setupSettings.ballAmount;
+  let shipWidth = setupSettings.shipWidth;
+  let shipHeight = setupSettings.shipHeight;
+  let pattern = brickPattern;
+  console.log("pattern", pattern);
+  let gravity = {
+    x: 0,
+    y: 0,
+  };
+  this.ballVelocity = setupSettings.ballVelocity;
   const Engine = Matter.Engine;
   const Events = Matter.Events;
   const Render = Matter.Render;
@@ -15,6 +23,7 @@ function PinballGame({ mapWidth, mapHeight }) {
   this.Bodies = Matter.Bodies;
   // create an engine
   this.engine = Engine.create();
+
   engine = this.engine;
   // create a renderer
   var render = Render.create({
@@ -23,64 +32,69 @@ function PinballGame({ mapWidth, mapHeight }) {
     options: {
       width: worldWidth,
       height: worldHeight,
-      background: '#fffff',
+      background: '#000',
       wireframes: false,
+      showCollisions: true,
     }
   });
+  //SET GRAVITY
+  engine.world.gravity = gravity;
 
-  engine.world.gravity.x = 0.0;
-  engine.world.gravity.y = 0.0;
+  //Create ship obj
+  this.ship = {
+    size: {w: shipWidth, h: shipHeight},
+    pos: {x: mapWidth/2, y: mapHeight-shipHeight/2},
+    color: "#660000",
+    body: this.Bodies.rectangle(worldWidth / 2, worldHeight - 30, shipWidth, shipHeight, {
+        isStatic: true,
+        label: "Bottom-Border",
+        chamfer: { radius: [shipHeight/6*4, shipHeight/6*4, 0, 0] },
+        render: {
+          fillStyle: "#660000",
+        }
+      }),
+  };
 
 
-    this.ship = {
-      size: {w: 100, h: 50},
-      pos: {x: mapWidth/2, y: mapHeight-20},
-      color: "#ff0000"
-    };
-
-
-  World.add(engine.world, [
-
-    //SHIP
-     this.Bodies.rectangle(worldWidth / 2, worldHeight - 30, this.ship.size.w, this.ship.size.h, {
-       isStatic: true,
-       label: "Bottom-Border",
-       chamfer: { radius: [40, 40, 0, 0] },
-       render: {
-         fillStyle: this.ship.color,
-       }
-     }),
-     // CREATE BORDERS
-     this.Bodies.rectangle(worldWidth / 2, offset, worldWidth, gauge, {
-       isStatic: true,
-       label: "TOP-Border",
-       render: {
-         fillStyle: "#FFFFFF"
-       }
-     }),
-     this.Bodies.rectangle(offset, worldHeight / 2, gauge, worldHeight,  {
-       isStatic: true,
-       label: "LEFT-Border",
-       render: {
-         fillStyle: "#FFFFFF"
-       }
-     }),
-     this.Bodies.rectangle(worldWidth - offset, worldHeight / 2, gauge, worldHeight, {
-       isStatic: true,
-       label: "RIGHT-Border",
-       render: {
-         fillStyle: "#FFFFFF"
-       }
+  //create wall
+  let worldWall = [
+    this.Bodies.rectangle(worldWidth / 2, wall.offset, worldWidth, wall.gauge, {
+      isStatic: true,
+      label: "TOP-Border",
+      render: {
+       fillStyle: "#FFFFFF"
+      }
+    }),
+    this.Bodies.rectangle(wall.offset, worldHeight / 2, wall.gauge, worldHeight,  {
+      isStatic: true,
+      label: "LEFT-Border",
+      render: {
+        fillStyle: "#FFFFFF"
+      }
+    }),
+    this.Bodies.rectangle(worldWidth - wall.offset, worldHeight / 2, wall.gauge, worldHeight, {
+      isStatic: true,
+      label: "RIGHT-Border",
+      render: {
+        fillStyle: "#FFFFFF"
+      }
      })
+   ];
 
-  ]);
+  let buildBricks = this.buildBricks(pattern);
+  //ADD SHIP AND WALLS TO THE WORLD
+  World.add(engine.world, this.ship.body);
+  World.add(engine.world, worldWall);
+  World.add(engine.world, buildBricks);
+
+
   //CREATE BALLS
   this.balls = [];
-  for (var i = 1; i <= 2; i++) {
-    World.add(engine.world, this.addNewBall(worldWidth/2, worldHeight/2, i+1, i+1, "white", ballsize, 1));
+  for (var i = 0; i < ballAmount; i++) {
+    World.add(engine.world, this.addBall(worldWidth/2, worldHeight/10*7, this.ballVelocity, "white", ballsize, 1));
   }
-  console.log("engine.world",engine.world);
 
+  //ADD MOUSE
   const canvas = document.querySelector('canvas');
   this.canvas = canvas;
   this.cxt = this.canvas.getContext ("2d");
@@ -102,46 +116,69 @@ function PinballGame({ mapWidth, mapHeight }) {
         }
     }
   });
-
   World.add(engine.world, mouseConstraint);
 
-  //World.add(engine.world, mouseConstraint);
-  // keep the mouse in sync with rendering
-  //render.mouse = mouse;
-
+  // ADD MOUSE
   this.mouseCTRL = new MouseCTRL({
     canvas: canvas,
     updateMouseCoordinates: (mousePos) => { this.updateMouseCoordinates(mousePos); }
   });
   const debug = document.getElementById("debug");
 
+  // CHECK COLLOSION DEBUGGING show info on canvas
   Events.on(engine, 'beforeUpdate', function(event) {
-      var engine = event.source;
-      let shipPos = "Ütő x: " + game.engine.world.bodies[0].position.x + "y: " + game.engine.world.bodies[0].position.y;
-      let ball = {};
-      let x = game.engine.world.bodies[5].position.x;
-      let y = game.engine.world.bodies[5].position.y;
-      let velocity = Matter.Vector.magnitude(game.engine.world.bodies[5].velocity);
-      let debugString = "Ütő x: " + x + "y: " + y +"<br>speed abs :"+ velocity;
-      debug.innerHTML = debugString;
+    var engine = event.source;
+    let shipPos = "Ütő x: " + this.ship.body.position.x + "y: " + this.ship.body.position.y;
+    //CHEKC IF BALL IS OUT OF ZONE
+    let debugString = "Ütő x: " + this.ship.body.position.x.toFixed(2) + "<br>y: " + this.ship.body.position.y.toFixed(2);
+    let debugBalls = "";
+
+    // IF BALLS MOVE OUT OF AREA REMOVE
+    for (var i = 0; i < this.balls.length; i++) {
+      //console.log("this.balls.length", this.balls.length);
+      if(Math.abs(this.balls[i].position.x) > this.worldWidthwidth || Math.abs(this.balls[i].position.y) > this.worldHeight) {
+				World.remove(engine.world, this.balls[i]);
+        this.balls.removeElement(this.balls[i]);
+        console.log(this.balls);
+			}
+    }
+  // SHOW BALLS POSITION and SPEED
+    for (var i = 0; i < this.balls.length; i++) {
+      let x = this.balls[i].position.x;
+      let y = this.balls[i].position.y;
+      let velocity = Matter.Vector.magnitude(this.balls[i].velocity);
+      debugBalls += "<br>Ball " + i + ":<br>y:" + y.toFixed(2) + ":<br>x:" + x.toFixed(2) + "<br>speed abs: " + velocity.toFixed(2);
       // apply random forces every 5 secs
-  });
+    }
+    debug.innerHTML = debugString + debugBalls;
+
+  }.bind(this));
+
+  Events.on(engine, 'collisionEnd', function(event) {
+    var engine = event.source;
+    let pairList = event.pairs;
+    for (var i = 0; i < pairList.length; i++) {
+      if (pairList[i].bodyA.label === "Ball" && pairList[i].bodyB.label === "Brick") {
+        World.remove(engine.world, pairList[i].bodyB);
+      }
+      if (pairList[i].bodyB.label === "Ball" && pairList[i].bodyA.label === "Brick") {
+        World.remove(engine.world, pairList[i].bodyA);
+      }
+    }
+    console.log(event.pairs);
+
+  }.bind(this));
   // run the engine
   Engine.run(engine);
   // run the renderer
   Render.run(render);
-
-
 };
 
-
-
-
-
-PinballGame.prototype.addNewBall = function(x, y, vx, vy, color, size, damage ) {
+PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) {
   let ball = this.Bodies.circle(x, y, size, {
-    density: 0.0012,
-    frictionAir : 0.0,
+    label : "Ball",
+    density: 1,
+    frictionAir : 0,
     frictionStatic: 0,
     friction: 0,
     inertia : Infinity,
@@ -150,23 +187,50 @@ PinballGame.prototype.addNewBall = function(x, y, vx, vy, color, size, damage ) 
       fillStyle: color,
     }
   });
-  Matter.Body.setVelocity(ball, {x: 0, y: 10});
+  Matter.Body.setVelocity(ball, velocity);
   ball.damage = damage;
   this.balls.push(ball);
-  console.log("this.balls", this.balls);
+  //console.log("this.balls", this.balls);
   return ball;
 };
 //
+
+PinballGame.prototype.buildBricks = function(pattern){
+  let brickwall = [];
+  let brickSize = 30;
+  let brickColor = "#004400";
+  let startpos = (this.worldWidth - brickSize * (pattern.length-1))/2;
+  for (var i = 0; i < pattern.length; i++) {
+    for (var j = 0; j < pattern[0].length; j++) {
+      if (pattern[i][j].exist === 1) {
+        let brick = this.Bodies.rectangle(startpos + brickSize*i, this.worldHeight/5 + brickSize*j, brickSize, brickSize, {
+          isStatic: true,
+          label: "Brick",
+          render: {
+            fillStyle: brickColor
+          }
+        });
+         brickwall.push(brick);
+         console.log("hello");
+      }
+    }
+  }
+  return brickwall;
+
+};
+
+
+
 PinballGame.prototype.updateMouseCoordinates = function(mousePos) {
   this.mouse = {
     x: mousePos.x,
     y: mousePos.y
   };
-  let distanceX = game.balls[0].position.x - this.mouse.x;
-  let force = distanceX * 300;
-  let distanceY = game.balls[0].position.y - this.mouse.y;
+  // let distanceX = game.balls[0].position.x - this.mouse.x;
+  // let force = distanceX * 300;
+  // let distanceY = game.balls[0].position.y - this.mouse.y;
   let shipBody = this.engine.world.bodies[0];
-  console.log("this.mouse.x < (this.ship.w/2), ", this.mouse.x < (this.ship.size.w/2), "ship", (this.ship.size.w / 2), "mouse.x", this.mouse.x);
+  //console.log("this.mouse.x < (this.ship.w/2), ", this.mouse.x < (this.ship.size.w/2), "ship", (this.ship.size.w / 2), "mouse.x", this.mouse.x);
   if (this.mouse.x < (this.ship.size.w/2)) {
     Matter.Body.setPosition(shipBody, {x : this.ship.size.w/2, y: this.engine.world.bodies[0].position.y});
   } else if (this.mouse.x > this.worldWidth - this.ship.size.w/2) {
@@ -175,4 +239,13 @@ PinballGame.prototype.updateMouseCoordinates = function(mousePos) {
     Matter.Body.setPosition(shipBody, {x : this.mouse.x, y : this.engine.world.bodies[0].position.y});
   }
 //  //Matter.Body.setPosition(game.balls[0], {x : this.mouse.y, y : this.mouse.y}, {x: force, y: this.worldHeight - 30});
+};
+
+
+
+Array.prototype.removeElement = function(element) {
+  var index = this.indexOf(element);
+  if (index > -1){
+    this.splice(index,1);
+  }
 };
