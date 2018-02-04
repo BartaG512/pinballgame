@@ -1,0 +1,19 @@
+@import url(https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css);
+@import url(https://fonts.googleapis.com/css?family=Lato:300,400,700);
+
+body {
+  font-family: "Operator Mono SSm A", "Operator Mono SSm B", 'Source Code Pro', Menlo, Consolas, Monaco, monospace;
+  background: #222222;
+  color: #bfd583;
+}
+
+canvas {
+  border-radius: 1px;
+	box-shadow: 0 0 50px rgb(0,0,0);
+  margin: auto;
+  left: 0;
+  right: 0;
+  top:0;
+  bottom:0;
+  position: fixed;
+}
