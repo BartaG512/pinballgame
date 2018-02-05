@@ -19,7 +19,7 @@
 //
 // let canvas = document.querySelector('canvas');
 let wall = {
-  offset: -25,
+  offset: -27,
   gauge: 50,
 };
 
@@ -28,12 +28,12 @@ let setupSettings = {
   ballAmount: 1,
   ballVelocity: {
     x: 0,
-    y: -10,
+    y: 6,
   },
-  shipWidth: 230,
+  shipWidth: 140,
   shipHeight: 20,
 };
-let sizeX = 10;
+let sizeX = 5;
 let sizeY = 6;
 let exist = 0;
 

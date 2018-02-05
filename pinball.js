@@ -11,7 +11,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   console.log("pattern", pattern);
   let gravity = {
     x: 0,
-    y: 0,
+    y: 0.05,
   };
   this.ballVelocity = setupSettings.ballVelocity;
   const Engine = Matter.Engine;
@@ -22,6 +22,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   const MouseConstraint = Matter.MouseConstraint;
   this.Bodies = Matter.Bodies;
   // create an engine
+  Matter.Resolver._restingThresh = 0.001;
   this.engine = Engine.create();
 
   engine = this.engine;
@@ -49,9 +50,9 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
         isStatic: true,
         frictionAir : 0,
         frictionStatic: 0,
-        inertia : Infinity,
         friction: 0,
-        label: "Bottom-Border",
+        inertia : Infinity,
+        label: "Ship",
     //    chamfer: { radius: [shipHeight/6*4, shipHeight/6*4, 0, 0] },
         render: {
           fillStyle: "#660000",
@@ -97,11 +98,11 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
      })
    ];
 
-  let buildBricks = this.buildBricks(pattern);
+  this.bricks = this.buildBricks(pattern);
   //ADD SHIP AND WALLS TO THE WORLD
   World.add(engine.world, this.ship.body);
   World.add(engine.world, worldWall);
-  World.add(engine.world, buildBricks);
+  World.add(engine.world, this.bricks);
 
 
   //CREATE BALLS
@@ -158,6 +159,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
         console.log(this.balls);
 			}
     }
+
   // SHOW BALLS POSITION and SPEED
     for (var i = 0; i < this.balls.length; i++) {
       let x = this.balls[i].position.x;
@@ -174,14 +176,35 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
     var engine = event.source;
     let pairList = event.pairs;
     console.log(event.pairs);
+    //Check collosion with brick
     for (var i = 0; i < pairList.length; i++) {
       //if B is brick remove it
-      if (this.bodyCheck(pairList[i].bodyA,"Ball") && this.bodyCheck(pairList[i].bodyB,"Brick")) {
-        World.remove(engine.world, pairList[i].bodyB);
-      }
+      let bodyA = pairList[i].bodyA;
+      let bodyB = pairList[i].bodyB;
+
+      // if (bodyA.label === "Ball" && bodyB.label === "Brick") {
+      //   World.remove(engine.world, pairList[i].bodyB);
+      //   console.log("Első verzió");
+      // }
       //if A is brick remove it
-      if ((this.bodyCheck(pairList[i].bodyB,"Ball") && pairList[i].bodyA.label === "Brick")) {
+      if (bodyA.label === "Brick" && bodyB.label === "Ball") {
         World.remove(engine.world, pairList[i].bodyA);
+      //  Matter.Body.applyForce(bodyA,);
+      // Matter.Body.setStatic(bodyA, false); 
+        console.log("Második verzió");
+      }
+
+      if (bodyA.label === "Ship" && bodyB.label === "Ball") {
+        let ship = bodyA;
+        let ball = bodyB;
+        console.log("ball position",ball.position);
+        console.log("paddle position",ship.position);
+        let collisionVector = Matter.Vector.sub(ball.position,ship.position);
+        collisionNormalVector = Matter.Vector.normalise(collisionVector);
+        let speed = ball.speed;
+        console.log("normalVector", collisionNormalVector);
+        let ballNewVelocityVector = Matter.Vector.mult(collisionNormalVector, speed);
+        Matter.Body.setVelocity(ball, ballNewVelocityVector);
       }
     }
 
