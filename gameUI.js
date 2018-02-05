@@ -28,9 +28,9 @@ let setupSettings = {
   ballAmount: 1,
   ballVelocity: {
     x: 0,
-    y: -1,
+    y: -10,
   },
-  shipWidth: 400,
+  shipWidth: 230,
   shipHeight: 20,
 };
 let sizeX = 10;

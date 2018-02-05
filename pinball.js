@@ -33,7 +33,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
       width: worldWidth,
       height: worldHeight,
       background: '#000',
-      wireframes: false,
+      wireframes: true,
       showCollisions: true,
     }
   });
