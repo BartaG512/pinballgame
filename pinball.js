@@ -34,7 +34,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
       width: worldWidth,
       height: worldHeight,
       background: '#000',
-      wireframes: true,
+      wireframes: false,
       showCollisions: true,
     }
   });
@@ -190,8 +190,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
       if (bodyA.label === "Brick" && bodyB.label === "Ball") {
         World.remove(engine.world, pairList[i].bodyA);
       //  Matter.Body.applyForce(bodyA,);
-      // Matter.Body.setStatic(bodyA, false); 
-        console.log("Második verzió");
+      // Matter.Body.setStatic(bodyA, false);
       }
 
       if (bodyA.label === "Ship" && bodyB.label === "Ball") {
@@ -201,7 +200,8 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
         console.log("paddle position",ship.position);
         let collisionVector = Matter.Vector.sub(ball.position,ship.position);
         collisionNormalVector = Matter.Vector.normalise(collisionVector);
-        let speed = ball.speed;
+      //  let speed = ball.speed;
+        let speed = 10;
         console.log("normalVector", collisionNormalVector);
         let ballNewVelocityVector = Matter.Vector.mult(collisionNormalVector, speed);
         Matter.Body.setVelocity(ball, ballNewVelocityVector);
@@ -247,17 +247,17 @@ PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) 
 PinballGame.prototype.buildBricks = function(pattern){
   let brickwall = [];
   let brickSize = { w: 50, h: 20 };
-  let brickColor = "#004400";
 
   let startpos = (this.worldWidth - brickSize.w * (pattern.length-1))/2;
   for (var i = 0; i < pattern.length; i++) {
     for (var j = 0; j < pattern[0].length; j++) {
+      let color = pattern[i][j].color;
       if (pattern[i][j].exist === 1) {
         let brick = this.Bodies.rectangle(startpos + brickSize.w * i, this.worldHeight/5 + brickSize.h * j, brickSize.w, brickSize.h, {
           isStatic: true,
           label: "Brick",
           render: {
-            fillStyle: brickColor,
+            fillStyle: color,
           }
         });
          brickwall.push(brick);

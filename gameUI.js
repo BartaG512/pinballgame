@@ -30,10 +30,10 @@ let setupSettings = {
     x: 0,
     y: 6,
   },
-  shipWidth: 140,
+  shipWidth: 120,
   shipHeight: 20,
 };
-let sizeX = 5;
+let sizeX = 10;
 let sizeY = 6;
 let exist = 0;
 
@@ -41,15 +41,17 @@ let brickPattern = new Array(sizeX).fill().map(() => new Array(sizeY).fill(0)); 
 console.log("brickPattern", brickPattern);
 
 for (let i = 0; i < brickPattern.length; i++) {
+  let randomColor =  "#" + getRandomInt(60,50).toString() +  getRandomInt(60,50).toString() + getRandomInt(70,70).toString();
   for (let j = 0; j < brickPattern[0].length; j++) {
+
+  brickPattern[i][j] = {};
+  brickPattern[i][j].color = randomColor;
     if ((j + i) % 2 === 0 ) {
-      brickPattern[i][j] = {};
     //  console.log("igen");
       brickPattern[i][j].health = 1;
       brickPattern[i][j].exist = 1;
     } else {
     //  console.log("nem");
-      brickPattern[i][j] = {};
       brickPattern[i][j].health = 1;
       brickPattern[i][j].exist = 1;
     }
@@ -60,7 +62,13 @@ console.log("brickPattern", brickPattern);
 var game = new PinballGame( {
   setupSettings: setupSettings,
   mapHeight: 600,
-  mapWidth: 400,
+  mapWidth: 900,
   brickPattern: brickPattern,
   wall: wall,
 } );
+
+
+
+function getRandomInt (max)  {
+  return Math.floor (Math.random() * Math.floor (max));
+}
