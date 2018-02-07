@@ -21,10 +21,11 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   const Mouse = Matter.Mouse;
   const MouseConstraint = Matter.MouseConstraint;
   this.Bodies = Matter.Bodies;
+  this.ballOnMap = 0;
   // create an engine
   Matter.Resolver._restingThresh = 0.001;
   this.engine = Engine.create();
-
+  this.player = {life: 3, score: 0};
   engine = this.engine;
   // create a renderer
   var render = Render.create({
@@ -145,17 +146,26 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   // CHECK COLLOSION DEBUGGING show info on canvas
   Events.on(engine, 'beforeUpdate', function(event) {
     var engine = event.source;
-    let shipPos = "Ütő x: " + this.ship.body.position.x + "y: " + this.ship.body.position.y;
+    let debugBallCount = "<br>Ballonmap: " + this.ballOnMap;
+    let shipPos = "<br>Ütő x: " + this.ship.body.position.x + "y: " + this.ship.body.position.y;
     //CHEKC IF BALL IS OUT OF ZONE
-    let debugString = "Ütő x: " + this.ship.body.position.x.toFixed(2) + "<br>y: " + this.ship.body.position.y.toFixed(2);
+    let debugString = "<br>Ütő x: " + this.ship.body.position.x.toFixed(2) + "<br>y: " + this.ship.body.position.y.toFixed(2);
     let debugBalls = "";
-
+    let debugScore = "<br>Player's score: " + this.player.score;
     // IF BALLS MOVE OUT OF AREA REMOVE
     for (var i = 0; i < this.balls.length; i++) {
       //console.log("this.balls.length", this.balls.length);
       if(Math.abs(this.balls[i].position.x) > this.worldWidthwidth || Math.abs(this.balls[i].position.y) > this.worldHeight) {
 				World.remove(engine.world, this.balls[i]);
         this.balls.removeElement(this.balls[i]);
+        this.ballOnMap--;
+
+        // RESART and GAME END LOGIC
+        if(this.ballOnMap === 0 && this.player.life > 0) {
+          // place new ball and start
+        } else {
+          // game end
+        }
         console.log(this.balls);
 			}
     }
@@ -168,7 +178,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
       debugBalls += "<br>Ball " + i + ":<br>y:" + y.toFixed(10) + ":<br>x:" + x.toFixed(10) + "<br>speed abs: " + velocity.toFixed(10);
       // apply random forces every 5 secs
     }
-    debug.innerHTML = debugString + debugBalls;
+    debug.innerHTML = debugBallCount + debugScore + debugString + debugBalls;
 
   }.bind(this));
 
@@ -189,10 +199,14 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
       //if A is brick remove it
       if (bodyA.label === "Brick" && bodyB.label === "Ball") {
         World.remove(engine.world, pairList[i].bodyA);
+        console.log("bodyA.point", bodyA.point);
+        this.player.score += bodyA.point;
       //  Matter.Body.applyForce(bodyA,);
       // Matter.Body.setStatic(bodyA, false);
       }
 
+
+      /// Check collosion
       if (bodyA.label === "Ship" && bodyB.label === "Ball") {
         let ship = bodyA;
         let ball = bodyB;
@@ -205,6 +219,7 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
         console.log("normalVector", collisionNormalVector);
         let ballNewVelocityVector = Matter.Vector.mult(collisionNormalVector, speed);
         Matter.Body.setVelocity(ball, ballNewVelocityVector);
+
       }
     }
 
@@ -215,12 +230,6 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   Render.run(render);
 };
 
-PinballGame.prototype.bodyCheck = function(body, check){
-  if (body.label === check) {
-    return true;
-  }
-  return false;
-};
 
 PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) {
   let ball = this.Bodies.circle(x, y, size, {
@@ -239,6 +248,7 @@ PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) 
   Matter.Body.setVelocity(ball, velocity);
   ball.damage = damage;
   this.balls.push(ball);
+  this.ballOnMap++;
   //console.log("this.balls", this.balls);
   return ball;
 };
@@ -256,6 +266,7 @@ PinballGame.prototype.buildBricks = function(pattern){
         let brick = this.Bodies.rectangle(startpos + brickSize.w * i, this.worldHeight/5 + brickSize.h * j, brickSize.w, brickSize.h, {
           isStatic: true,
           label: "Brick",
+          point: pattern[i][j].point,
           render: {
             fillStyle: color,
           }
