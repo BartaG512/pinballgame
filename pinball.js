@@ -3,10 +3,10 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   let worldWidth = this.worldWidth;
   this.worldHeight = mapHeight;
   let worldHeight = this.worldHeight;
-  let ballsize = setupSettings.ballsize;
+  this.ballsize = setupSettings.ballsize;
   let ballAmount = setupSettings.ballAmount;
-  let shipWidth = setupSettings.shipWidth;
-  let shipHeight = setupSettings.shipHeight;
+  this.shipWidth = setupSettings.shipWidth;
+  this.shipHeight = setupSettings.shipHeight;
   let pattern = brickPattern;
   console.log("pattern", pattern);
   let gravity = {
@@ -19,11 +19,11 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   const Render = Matter.Render;
   const World = Matter.World;
   const Mouse = Matter.Mouse;
-  const MouseConstraint = Matter.MouseConstraint;
+//  const MouseConstraint = Matter.MouseConstraint;
   this.Bodies = Matter.Bodies;
   this.ballOnMap = 0;
   // create an engine
-  Matter.Resolver._restingThresh = 0.001;
+//  Matter.Resolver._restingThresh = 0.001;
   this.engine = Engine.create();
   this.player = {life: 3, score: 0};
   engine = this.engine;
@@ -43,11 +43,15 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   engine.world.gravity = gravity;
 
   //Create ship obj
+  this.paddleStartingPos = {
+    x: worldWidth / 2,
+    y: worldHeight - 30
+  };
+
   this.ship = {
-    size: {w: shipWidth, h: shipHeight},
-    pos: {x: mapWidth/2, y: mapHeight-shipHeight/2},
+    size: {w: this.shipWidth, h: this.shipHeight},
     color: "#660000",
-    body: this.Bodies.rectangle(worldWidth / 2, worldHeight - 30, shipWidth, shipHeight, {
+    body: this.Bodies.rectangle(this.paddleStartingPos.x, this.paddleStartingPos.y, this.shipWidth, this.shipHeight, {
         isStatic: true,
         frictionAir : 0,
         frictionStatic: 0,
@@ -106,10 +110,11 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   World.add(engine.world, this.bricks);
 
 
+
   //CREATE BALLS
   this.balls = [];
   for (var i = 0; i < ballAmount; i++) {
-    World.add(engine.world, this.addBall(worldWidth/2, worldHeight/10*7, this.ballVelocity, "white", ballsize, 1));
+    World.add(engine.world, this.addBall(worldWidth/2, worldHeight/10*7, this.ballVelocity, "white", this.ballsize, 1, false));
   }
 
   //ADD MOUSE
@@ -122,19 +127,19 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
     y: 0
   };
 
-  let mouse = Mouse.create(render.canvas);
-  let mouseConstraint = MouseConstraint.create(engine, {
-    mouse: mouse,
-    constraint: {
-      //  bodyB: this.balls[0],
-        stiffness: 1,
-        damping: 0,
-        render: {
-            visible: false
-        }
-    }
-  });
-  World.add(engine.world, mouseConstraint);
+  // let mouse = Mouse.create(render.canvas);
+  // let mouseConstraint = MouseConstraint.create(engine, {
+  //   mouse: mouse,
+  //   constraint: {
+  //     //  bodyB: this.balls[0],
+  //       stiffness: 1,
+  //       damping: 0,
+  //       render: {
+  //           visible: false
+  //       }
+  //   }
+  // });
+  // World.add(engine.world, mouseConstraint);
 
   // ADD MOUSE
   this.mouseCTRL = new MouseCTRL({
@@ -230,8 +235,29 @@ function PinballGame({ setupSettings, mapWidth, mapHeight, brickPattern, wall}) 
   Render.run(render);
 };
 
+ 
+PinballGame.prototype.startGameState = function(){
+//   player life-1
+  this.player.life -= 1;
+  //       add new ball to the center
+  let pos = {
+    x: mapWidth/2,
+    y: mapHeight - this.shipHeight/2 - setupSettings.ballSize / 2};
 
-PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) {
+    //       set the ball fixed
+  World.add(engine.world, this.addball(pos.x, pos.y, {x: 0, y:0}, "white", setupSettings.size, setupSettings.damage, true));
+//       set the paddle to fixed and ignore mouse movement
+//       give a vector with click (click and ball center)
+
+//       after click
+//         set the paddle to normalVector
+//        set the ball to normal and give velocity of the click
+
+
+
+};
+
+PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage, fixed) {
   let ball = this.Bodies.circle(x, y, size, {
     label : "Ball",
     density: 1,
@@ -249,6 +275,9 @@ PinballGame.prototype.addBall = function(x, y, velocity , color, size, damage ) 
   ball.damage = damage;
   this.balls.push(ball);
   this.ballOnMap++;
+  if (fixed) {
+    Matter.Body.setStatic(ball, fixed);
+  }
   //console.log("this.balls", this.balls);
   return ball;
 };

@@ -25,7 +25,7 @@ let wall = {
 
 let setupSettings = {
   ballsize: 10,
-  ballAmount: 10,
+  ballAmount: 1,
   ballVelocity: {
     x: 0,
     y: 6,
